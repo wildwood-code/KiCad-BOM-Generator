@@ -20,7 +20,7 @@
 #    that came with KiCad.
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/11/2026
+#  Modified   : 04/12/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -34,13 +34,18 @@ Fields: Qty, Refs, IPN, MFN, AML1, AML2, Value, Package, Description, Datasheet
 Automatic BOM part number generator for some components (ceramic and tantalum
 capacitors; thick-film, carbon-film, and metal-film resistors)
 
+Optional "variant" supplied on command line chooses the variant
+If "variant" is not supplied or is not an exact match of a defined variant for
+the schematic, the default will be used.
+
 Command line:
-python "pathToFile/BOM_enhanced.py" "%I" "%O.html"
+python "pathToFile/BOM_enhanced.py" "%I" "%O.html" {"variant"}
 """
 
 import re
 import sys
-from BOM.kicad_netlist_reader import netlist
+from BOM.kicad_netlist_reader import netlist, comp
+from BOM.kicad_netlist_reader_extension import comp_variants
 from BOM.kicad_utils import open_file_write
 from BOM.BOM_utilities import BOM_ref_count as BOM_ref_count
 from BOM.BOM_capacitor import BOM_MLCC_capacitor as MLCC
@@ -76,7 +81,7 @@ def coerce_str(arg) -> str:
 		return "?"
 
 
-def bom_generator(filein: str, fileout:str):
+def bom_generator(filein: str, fileout:str, target:str):
 	# Open and read the netlist file
 	try:
 		net = netlist(filein)
@@ -85,7 +90,7 @@ def bom_generator(filein: str, fileout:str):
 		# try to catch here as an extra layer of error handling
 		error = f'Unable to open "{filein}"'
 		print(__file__, ":", error, file=sys.stderr)
-		sys.exit(-1)
+		return -1
 		
 
 	# Open the output file for writing
@@ -102,16 +107,22 @@ def bom_generator(filein: str, fileout:str):
 	# pre-compile the regex expressions
 	RE_PACKAGE = re.compile(r"^(?:.+:)?([^:]+)$")
 	
+	# generate a list of variants
+	sch_variants = comp_variants.get_variant_names(net)
+	
 	# read the BOM components and look for "BOM_Generator"
 	settings = BOM_settings()
 	components = net.getInterestingComponents(excludeBOM=False)
+	
 	for c in components:
-		if c.getLibName()=="Drawing" and c.getPartName()=="BOM_GENERATOR":
-			fields = c.getFieldNames()
+		cv = comp_variants(c, target)
+		if cv.getLibName()=="Drawing" and cv.getPartName()=="BOM_GENERATOR":
+			# get BOM generator settings and apply them to our generators
+			fields = cv.getFieldNames()
 			for fname in fields:
-				v = c.getField(fname)
+				v = cv.getField(fname)
 				settings.add_setting(fname, v)
-			
+
 			for generator in GENERATORS:
 				generator.apply_settings(settings)
 
@@ -119,30 +130,45 @@ def bom_generator(filein: str, fileout:str):
 			break
 			
 	# read the BOM components and generate the BOM
-	components = net.getInterestingComponents(excludeBOM=True, DNP=True)
+	components = net.getInterestingComponents(excludeBOM=True)
 	bom = BOM()
 	component_count = 0
 
 	for c in components:
+		
+		cv = comp_variants(c, target)
+		
+		if cv.getDNP():
+			# skip this DNP component
+			continue
 
-		lib_name = c.getLibName()
-		part_name = c.getPartName()
+		lib_name = cv.getLibName()
+		part_name = cv.getPartName()
 		if lib_name=="Drawing" and part_name=="BOM_GENERATOR":
 			# skip the BOM_GENERATOR symbol
 			continue
-		refs = c.getRef()
+
+		# reference designator(s) and keep a tally of the number of components
+		refs = cv.getRef()
 		qty = BOM_ref_count(refs)
 		component_count += qty
-		ipn = c.getField("IPN")
-		footprint = c.getFootprint()
+
+		# part value, description, and datasheet link
+		value = cv.getValue()
+		desc = cv.getDescription()
+		datasheet = cv.getDatasheet()
+		
+		# footprint/package - coerce this to the actual footprint name
+		footprint = cv.getFootprint()
 		if m := RE_PACKAGE.match(footprint):
 			# strip off everything up to the actual footprint name
 			footprint = m.group(1)
-		value = c.getValue()
-		desc = c.getDescription()
-		datasheet = c.getDatasheet()
-		mpn = c.getField("MPN")
-		mfn = c.getField("MFN")
+
+		# internal part number, manufacturer name, manufacturer part number
+		ipn = cv.getField("IPN")
+		mpn = cv.getField("MPN")
+		mfn = cv.getField("MFN")
+
 		if not mpn and value:
 			# MPN not specified but value is... try to auto-generate MPN
 			# if it falls through in here, the defaults from the
@@ -170,11 +196,11 @@ def bom_generator(filein: str, fileout:str):
 		entry = BOM_Entry(refs, value, desc, footprint, ipn, mfn, mpn, datasheet)
 		
 		# attach any supplier tags if present
-		aml = c.getField("S1PN")
+		aml = cv.getField("S1PN")
 		if aml:
 			entry.add_aml(aml)
 
-		aml = c.getField("S2PN")
+		aml = cv.getField("S2PN")
 		if aml:
 			entry.add_aml(aml)
 
@@ -201,6 +227,7 @@ def bom_generator(filein: str, fileout:str):
 		<h1><!--SOURCE--></h1>
 		<p><!--DATE--></p>
 		<p><!--TOOL--></p>
+		<p><!--VARIANT--></p>
 		<p><!--COMPCOUNT--></p>
 		<table>
 		<!--TABLEROW-->
@@ -215,6 +242,15 @@ def bom_generator(filein: str, fileout:str):
 	html = html.replace('<!--TOOL-->', coerce_str(net.getTool()))
 	html = html.replace('<!--COMPCOUNT-->', "<b>Component Count:</b>" + \
 		str(component_count))
+		
+	if sch_variants:
+		# this schematic has variants...
+		# add a heading stating which one is represented
+		variant_tag = "< Default >"
+		if target in sch_variants:
+			variant_tag = target
+		variant_label = f"Variant: {variant_tag}"
+		html = html.replace('<!--VARIANT-->', variant_label)
 
 	# generate table header
 	row =  '<tr>'
@@ -272,11 +308,26 @@ def bom_generator(filein: str, fileout:str):
 	fh_outfile.close()
 
 	if not was_outfile_opened:
-		sys.exit(1)
+		return 1
+		
+	return 0
 
 
 if __name__ == "__main__":
-	bom_generator(sys.argv[1], sys.argv[2])
+
+	nargin = len(sys.argv)-1
+
+	if nargin < 2:
+		print('Usage: BOM_HTML_generator.py "filein.xml" "fileout.html" {"variantname"}')
+		result = 0
+
+	else:
+		filein = sys.argv[1]
+		fileout = sys.argv[2]
+		variant = sys.argv[3] if nargin >= 3 else ""
+		result = bom_generator(filein, fileout, variant)
+	
+	sys.exit(result)
 
 
 # ******************************************************************************
