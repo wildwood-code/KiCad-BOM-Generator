@@ -10,7 +10,7 @@
 #    class BOM_RMF_resistor => metal-film SMT MELF resistors
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/08/2026
+#  Modified   : 04/13/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -32,7 +32,7 @@ from BOM.BOM_settings import BOM_settings
 class BOM_SMT_resistor(BOM_component):
 	"""Thick-film SMT resistors"""
 
-	class RFormat(Enum):
+	class Format(Enum):
 		GENERIC = 0    # default if no other is specified
 		CRCW = 1       # Vishay Dale thick-film resistors
 		RMCF = 2       # Stackpole/SEI thick-film resistors
@@ -42,7 +42,7 @@ class BOM_SMT_resistor(BOM_component):
 	@classmethod
 	def static_init(cls):
 		# public
-		cls.FORMAT : BOM_SMT_resistor.RFormat|None = None
+		cls.FORMAT : BOM_SMT_resistor.Format|None = None
 		cls.DEFAULT_TOL = "J"  # 5%
 		cls.DEFAULT_TCR = "±200ppm/K"
 
@@ -90,26 +90,25 @@ class BOM_SMT_resistor(BOM_component):
 		
 
 	@staticmethod
-	def __get_format(format:"BOM_SMT_resistor.RFormat|str|None") -> "BOM_SMT_resistor.RFormat":
-		if isinstance(format, BOM_SMT_resistor.RFormat):
+	def __get_format(format:"BOM_SMT_resistor.Format|str|None") -> "BOM_SMT_resistor.Format":
+		if isinstance(format, BOM_SMT_resistor.Format):
 			return format
 		elif isinstance(format, str):
 			if BOM_SMT_resistor.__RE_MATCH_CRCW.match(format):
-				return BOM_SMT_resistor.RFormat.CRCW
+				return BOM_SMT_resistor.Format.CRCW
 			elif BOM_SMT_resistor.__RE_MATCH_RMCF.match(format):
-				return BOM_SMT_resistor.RFormat.RMCF
+				return BOM_SMT_resistor.Format.RMCF
 			elif BOM_SMT_resistor.__RE_MATCH_RK73.match(format):
-				return BOM_SMT_resistor.RFormat.RK73
-		return BOM_SMT_resistor.RFormat.GENERIC
+				return BOM_SMT_resistor.Format.RK73
+		return BOM_SMT_resistor.Format.GENERIC
 
 
 	@staticmethod
-	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcr:str|None, format:"BOM_SMT_resistor.RFormat|str|None"):
+	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcr:str|None, format:"BOM_SMT_resistor.Format|str|None"):
 
 		# determine format
 		if format is None:
-			# use generic if there is missing information
-			my_format = BOM_SMT_resistor.RFormat.GENERIC
+			my_format = BOM_SMT_resistor.FORMAT
 		else:
 			my_format = BOM_SMT_resistor.__get_format(format)
 
@@ -120,11 +119,11 @@ class BOM_SMT_resistor(BOM_component):
 		my_tol = BOM_component._tol_expr(tol) if tol is None else tol
 		my_tcr = "?" if tcr is None else tcr
 
-		if my_format == BOM_SMT_resistor.RFormat.CRCW:
+		if my_format == BOM_SMT_resistor.Format.CRCW:
 			mfn, mpn = BOM_SMT_resistor.__generate_CRCW(my_package, my_value, my_tol, my_tcr)
-		elif my_format == BOM_SMT_resistor.RFormat.RMCF:
+		elif my_format == BOM_SMT_resistor.Format.RMCF:
 			mfn, mpn = BOM_SMT_resistor.__generate_RMCF(my_package, my_value, my_tol, my_tcr)
-		elif my_format == BOM_SMT_resistor.RFormat.RK73:
+		elif my_format == BOM_SMT_resistor.Format.RK73:
 			mfn, mpn = BOM_SMT_resistor.__generate_RK73(my_package, my_value, my_tol, my_tcr)
 		else:
 			mfn = "Generic"
@@ -254,7 +253,7 @@ class BOM_SMT_resistor(BOM_component):
 class BOM_THT_resistor(BOM_component):
 	"""Carbon film THT resistors"""
 
-	class RFormat(Enum):
+	class Format(Enum):
 		GENERIC = 0    # default if no other is specified
 		CF = 1         # Stackpole/SEI CF series carbon film THT resistors
 		CFR = 2        # Yageo CFR series carbon film THT resistors
@@ -263,7 +262,7 @@ class BOM_THT_resistor(BOM_component):
 	@classmethod
 	def static_init(cls):
 		# public
-		cls.FORMAT : BOM_THT_resistor.RFormat|None = None
+		cls.FORMAT : BOM_THT_resistor.Format|None = None
 		cls.DEFAULT_TOL = "J"  # 5%
 
 		# private
@@ -304,24 +303,23 @@ class BOM_THT_resistor(BOM_component):
 		
 
 	@staticmethod
-	def __get_format(format:"BOM_THT_resistor.RFormat|str|None") -> "BOM_THT_resistor.RFormat":
-		if isinstance(format, BOM_THT_resistor.RFormat):
+	def __get_format(format:"BOM_THT_resistor.Format|str|None") -> "BOM_THT_resistor.Format":
+		if isinstance(format, BOM_THT_resistor.Format):
 			return format
 		elif isinstance(format, str):
 			if BOM_THT_resistor.__RE_MATCH_CF.match(format):
-				return BOM_THT_resistor.RFormat.CF
+				return BOM_THT_resistor.Format.CF
 			elif BOM_THT_resistor.__RE_MATCH_CFR.match(format):
-				return BOM_THT_resistor.RFormat.CFR
-		return BOM_THT_resistor.RFormat.GENERIC
+				return BOM_THT_resistor.Format.CFR
+		return BOM_THT_resistor.Format.GENERIC
 
 
 	@staticmethod
-	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, format:"BOM_THT_resistor.RFormat|str|None"):
+	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, format:"BOM_THT_resistor.Format|str|None"):
 
 		# determine format
 		if format is None:
-			# use generic if there is missing information
-			my_format = BOM_THT_resistor.RFormat.GENERIC
+			my_format = BOM_THT_resistor.FORMAT
 		else:
 			my_format = BOM_THT_resistor.__get_format(format)
 
@@ -331,9 +329,9 @@ class BOM_THT_resistor(BOM_component):
 		my_value = numstr(value)
 		my_tol = BOM_component._tol_expr(tol) if tol is None else tol
 
-		if my_format == BOM_THT_resistor.RFormat.CF:
+		if my_format == BOM_THT_resistor.Format.CF:
 			mfn, mpn = BOM_THT_resistor.__generate_CF(my_package, my_value, my_tol)
-		elif my_format == BOM_THT_resistor.RFormat.CFR:
+		elif my_format == BOM_THT_resistor.Format.CFR:
 			mfn, mpn = BOM_THT_resistor.__generate_CFR(my_package, my_value, my_tol)
 		else:
 			mfn = "Generic"
@@ -408,7 +406,7 @@ class BOM_THT_resistor(BOM_component):
 class BOM_RMF_resistor(BOM_component):
 	"""Metal-film SMT MELF resistors"""
 
-	class RFormat(Enum):
+	class Format(Enum):
 		GENERIC = 0    # default if no other is specified
 		MMF = 1        # Yageo MMF series thick-film MELF resistors
 		MLFA = 2       # Stackpole/SEI MLFA series thick-film MELF resistors
@@ -417,7 +415,7 @@ class BOM_RMF_resistor(BOM_component):
 	@classmethod
 	def static_init(cls):
 		# public
-		cls.FORMAT : BOM_RMF_resistor.RFormat|None = None
+		cls.FORMAT : BOM_RMF_resistor.Format|None = None
 		cls.DEFAULT_TOL = "F"  # 1%
 		cls.DEFAULT_TCR = "±100ppm/K"
 
@@ -465,24 +463,23 @@ class BOM_RMF_resistor(BOM_component):
 		
 
 	@staticmethod
-	def __get_format(format:"BOM_RMF_resistor.RFormat|str|None") -> "BOM_RMF_resistor.RFormat":
-		if isinstance(format, BOM_RMF_resistor.RFormat):
+	def __get_format(format:"BOM_RMF_resistor.Format|str|None") -> "BOM_RMF_resistor.Format":
+		if isinstance(format, BOM_RMF_resistor.Format):
 			return format
 		elif isinstance(format, str):
 			if BOM_RMF_resistor.__RE_MATCH_MLFA.match(format):
-				return BOM_RMF_resistor.RFormat.MLFA
+				return BOM_RMF_resistor.Format.MLFA
 			elif BOM_RMF_resistor.__RE_MATCH_MMF.match(format):
-				return BOM_RMF_resistor.RFormat.MMF
-		return BOM_RMF_resistor.RFormat.GENERIC
+				return BOM_RMF_resistor.Format.MMF
+		return BOM_RMF_resistor.Format.GENERIC
 
 
 	@staticmethod
-	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcr:str|None, format:"BOM_RMF_resistor.RFormat|str|None"):
+	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcr:str|None, format:"BOM_RMF_resistor.Format|str|None"):
 
 		# determine format
 		if format is None:
-			# use generic if there is missing information
-			my_format = BOM_RMF_resistor.RFormat.GENERIC
+			my_format = BOM_RMF_resistor.FORMAT
 		else:
 			my_format = BOM_RMF_resistor.__get_format(format)
 
@@ -493,9 +490,9 @@ class BOM_RMF_resistor(BOM_component):
 		my_tol = BOM_component._tol_expr(tol) if tol is None else tol
 		my_tcr = "?" if tcr is None else tcr
 
-		if my_format == BOM_RMF_resistor.RFormat.MLFA:
+		if my_format == BOM_RMF_resistor.Format.MLFA:
 			mfn, mpn = BOM_RMF_resistor.__generate_MLFA(my_package, my_value, my_tol, my_tcr)
-		elif my_format == BOM_RMF_resistor.RFormat.MMF:
+		elif my_format == BOM_RMF_resistor.Format.MMF:
 			mfn, mpn = BOM_RMF_resistor.__generate_MMF(my_package, my_value, my_tol, my_tcr)
 		else:
 			mfn = "Generic"

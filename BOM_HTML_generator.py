@@ -20,7 +20,7 @@
 #    that came with KiCad.
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/12/2026
+#  Modified   : 04/13/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -53,6 +53,8 @@ from BOM.BOM_capacitor import BOM_tantalum_capacitor as CTAN
 from BOM.BOM_resistor import BOM_SMT_resistor as RTHICK
 from BOM.BOM_resistor import BOM_THT_resistor as RCF
 from BOM.BOM_resistor import BOM_RMF_resistor as RMF
+from BOM.BOM_header import BOM_pin_header as JPH
+from BOM.BOM_header import BOM_socket_header as JSH
 from BOM.BOM_settings import BOM_settings
 from BOM.BOM import BOM, BOM_Entry
 
@@ -66,7 +68,9 @@ GENERATORS = \
 	RTHICK,		# thick-film SMT chip resistors
 	RCF,		# carbon-film THT resistors
 	CTAN,		# tantalum SMT capacitors
-	RMF			# metal-film SMT MELF resistors
+	RMF,		# metal-film SMT MELF resistors
+	JPH,        # rectangular pin headers
+	JSH         # rectangular socket headers
 ]
 
 # <-- END CONFIGURATION -->

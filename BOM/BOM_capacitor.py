@@ -8,7 +8,7 @@
 #    and tantalum capacitor)
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/08/2026
+#  Modified   : 04/13/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -30,7 +30,7 @@ from BOM.BOM_settings import BOM_settings
 class BOM_MLCC_capacitor(BOM_component):
 	"""Multi-layer ceramic capacitor"""
 
-	class CFormat(Enum):
+	class Format(Enum):
 		GENERIC = 0    # default if no other is specified
 		KEMET = 1      # Kemet MLCC capacitor
 		MURATA = 2     # Murata MLCC capacitor
@@ -41,7 +41,7 @@ class BOM_MLCC_capacitor(BOM_component):
 	@classmethod
 	def static_init(cls):
 		# public
-		cls.FORMAT: BOM_MLCC_capacitor.CFormat|None = None    # None will default to CFormat.GENERIC
+		cls.FORMAT: BOM_MLCC_capacitor.Format|None = None    # None will default to Format.GENERIC
 		cls.DEFAULT_TOL = "M"   # ±20%
 		cls.DEFAULT_TCC_LOW = "C0G"
 		cls.DEFAULT_TCC_MID = "X7R"
@@ -99,19 +99,19 @@ class BOM_MLCC_capacitor(BOM_component):
 
 
 	@staticmethod
-	def __get_format(format:"BOM_MLCC_capacitor.CFormat|str|None"):
-		if isinstance(format, BOM_MLCC_capacitor.CFormat):
+	def __get_format(format:"BOM_MLCC_capacitor.Format|str|None"):
+		if isinstance(format, BOM_MLCC_capacitor.Format):
 			return format
 		elif isinstance(format, str):
 			if BOM_MLCC_capacitor.__RE_MATCH_KEMET.match(format):
-				return BOM_MLCC_capacitor.CFormat.KEMET
+				return BOM_MLCC_capacitor.Format.KEMET
 			elif BOM_MLCC_capacitor.__RE_MATCH_MURATA.match(format):
-				return BOM_MLCC_capacitor.CFormat.MURATA
+				return BOM_MLCC_capacitor.Format.MURATA
 			elif BOM_MLCC_capacitor.__RE_MATCH_TDK.match(format):
-				return BOM_MLCC_capacitor.CFormat.TDK
+				return BOM_MLCC_capacitor.Format.TDK
 			elif BOM_MLCC_capacitor.__RE_MATCH_SEI.match(format):
-				return BOM_MLCC_capacitor.CFormat.SEI
-		return BOM_MLCC_capacitor.CFormat.GENERIC
+				return BOM_MLCC_capacitor.Format.SEI
+		return BOM_MLCC_capacitor.Format.GENERIC
 
 
 	@staticmethod
@@ -121,12 +121,11 @@ class BOM_MLCC_capacitor(BOM_component):
 
 
 	@staticmethod
-	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcc:str|None, Vrating:numstr|None, format:"BOM_MLCC_capacitor.CFormat|str|None"):
+	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcc:str|None, Vrating:numstr|None, format:"BOM_MLCC_capacitor.Format|str|None"):
 
 		# determine format
 		if format is None:
-			# use generic if there is missing information
-			my_format = BOM_MLCC_capacitor.CFormat.GENERIC
+			my_format = BOM_MLCC_capacitor.FORMAT
 		else:
 			my_format = BOM_MLCC_capacitor.__get_format(format)
 
@@ -138,13 +137,13 @@ class BOM_MLCC_capacitor(BOM_component):
 		my_tol = "" if tol is None else tol
 		my_Vrating = numstr(Vrating)
 
-		if my_format == BOM_MLCC_capacitor.CFormat.KEMET:
+		if my_format == BOM_MLCC_capacitor.Format.KEMET:
 			mfn, mpn = BOM_MLCC_capacitor.__generate_Kemet(my_package, my_value, my_tol, my_tcc, my_Vrating)
-		elif my_format == BOM_MLCC_capacitor.CFormat.MURATA:
+		elif my_format == BOM_MLCC_capacitor.Format.MURATA:
 			mfn, mpn = BOM_MLCC_capacitor.__generate_Murata(my_package, my_value, my_tol, my_tcc, my_Vrating)
-		elif my_format == BOM_MLCC_capacitor.CFormat.TDK:
+		elif my_format == BOM_MLCC_capacitor.Format.TDK:
 			mfn, mpn = BOM_MLCC_capacitor.__generate_TDK(my_package, my_value, my_tol, my_tcc, my_Vrating)
-		elif my_format == BOM_MLCC_capacitor.CFormat.SEI:
+		elif my_format == BOM_MLCC_capacitor.Format.SEI:
 			mfn, mpn = BOM_MLCC_capacitor.__generate_SEI(my_package, my_value, my_tol, my_tcc, my_Vrating)
 		else:
 			mfn = "Generic"
@@ -367,7 +366,7 @@ class BOM_MLCC_capacitor(BOM_component):
 class BOM_tantalum_capacitor(BOM_component):
 	"""Tantalum capacitor"""
 
-	class CFormat(Enum):
+	class Format(Enum):
 		GENERIC = 0    # default if no other is specified
 		KEMET = 1      # Kemet tantalum capacitor
 		AVX = 2        # AVX tantalum capacitor
@@ -376,7 +375,7 @@ class BOM_tantalum_capacitor(BOM_component):
 	@classmethod
 	def static_init(cls):
 		# public
-		cls.FORMAT: BOM_tantalum_capacitor.CFormat|None = None    # None will default to CFormat.GENERIC
+		cls.FORMAT: BOM_tantalum_capacitor.Format|None = None    # None will default to Format.GENERIC
 		cls.DEFAULT_TOL = "M"   # ±20%
 		cls.DEFAULT_VRATING = "16V"
 
@@ -422,15 +421,15 @@ class BOM_tantalum_capacitor(BOM_component):
 		
 		
 	@staticmethod
-	def __get_format(format:"BOM_tantalum_capacitor.CFormat|str|None"):
-		if isinstance(format, BOM_tantalum_capacitor.CFormat):
+	def __get_format(format:"BOM_tantalum_capacitor.Format|str|None"):
+		if isinstance(format, BOM_tantalum_capacitor.Format):
 			return format
 		elif isinstance(format, str):
 			if BOM_tantalum_capacitor.__RE_MATCH_KEMET.match(format):
-				return BOM_tantalum_capacitor.CFormat.KEMET
+				return BOM_tantalum_capacitor.Format.KEMET
 			elif BOM_tantalum_capacitor.__RE_MATCH_AVX.match(format):
-				return BOM_tantalum_capacitor.CFormat.AVX
-		return BOM_tantalum_capacitor.CFormat.GENERIC
+				return BOM_tantalum_capacitor.Format.AVX
+		return BOM_tantalum_capacitor.Format.GENERIC
 
 
 	@staticmethod
@@ -440,12 +439,11 @@ class BOM_tantalum_capacitor(BOM_component):
 
 
 	@staticmethod
-	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, Vrating:numstr|None, format:"BOM_tantalum_capacitor.CFormat|str|None"):
+	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, Vrating:numstr|None, format:"BOM_tantalum_capacitor.Format|str|None"):
 
 		# determine format
 		if package is None:
-			# use generic if there is missing information
-			my_format = BOM_tantalum_capacitor.CFormat.GENERIC
+			my_format = BOM_tantalum_capacitor.FORMAT
 		else:
 			my_format = BOM_tantalum_capacitor.__get_format(format)
 
@@ -456,9 +454,9 @@ class BOM_tantalum_capacitor(BOM_component):
 		my_tol = "" if tol is None else tol
 		my_Vrating = numstr(Vrating)
 
-		if my_format == BOM_tantalum_capacitor.CFormat.KEMET:
+		if my_format == BOM_tantalum_capacitor.Format.KEMET:
 			mfn, mpn = BOM_tantalum_capacitor.__generate_Kemet(my_package, my_value, my_tol, my_Vrating)
-		elif my_format == BOM_tantalum_capacitor.CFormat.AVX:
+		elif my_format == BOM_tantalum_capacitor.Format.AVX:
 			mfn, mpn = BOM_tantalum_capacitor.__generate_AVX(my_package, my_value, my_tol, my_Vrating)
 		else:
 			mfn = "Generic"
