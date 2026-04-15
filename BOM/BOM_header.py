@@ -7,7 +7,7 @@
 #    Bill-of-material single/dual row, pin/socket header part number generator
 #
 #  Created    : 04/13/2026
-#  Modified   : 04/13/2026
+#  Modified   : 04/14/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -22,11 +22,40 @@ from BOM.BOM_settings import BOM_settings
 
 
 # ------------------------------------------------------------------------------
+# class: BOM_header
+# ------------------------------------------------------------------------------
+
+@static_init
+class BOM_header(BOM_component):
+	"""Parent class for all rectangular headers"""
+
+	# BOM_header does not define the abstract method apply_settings()
+	# and therefore remains abstract. The concrete class derived from
+	# BOM_header shall define a method apply_settings()
+	
+	@classmethod
+	def static_init(cls):
+		cls.__RE_PULL_DIMS = re.compile(r"^([12])x(0[1-9]|[1-3][0-9]|40)$")
+		
+	
+	def __init__(self, pattern, id, format, *args):
+		super().__init__(pattern, id, format, *args)
+
+
+	@staticmethod
+	def _get_dims(dims:str) -> tuple[int, int]:
+		if m := BOM_header.__RE_PULL_DIMS.match(dims):
+			return (int(m.group(1)), int(m.group(2)))
+		else:
+			return (0, 0)
+			
+
+# ------------------------------------------------------------------------------
 # class: BOM_pin_header
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_pin_header(BOM_component):
+class BOM_pin_header(BOM_header):
 	"""Single/dual row pin header"""
 
 	class Format(Enum):
@@ -47,7 +76,6 @@ class BOM_pin_header(BOM_component):
 		# TODO: future will have different pitches and select series by pitch
 		cls.__RE_PART_ID_PATTERN = re.compile(r"^Connector:(?:Pin_)?Header_0?[12]x[0-9]{2}\[PinHeader_.+_P2\.54mm_(?:Vertical|Horizontal)\]$")
 		cls.__RE_PACKAGE_PATTERN = re.compile(r"PinHeader_(.+)_(P2\.54mm)_(Vertical|Horizontal)")
-		cls.__RE_PULL_DIMS = re.compile(r"^([12])x(0[1-9]|[1-3][0-9]|40)$")
 
 
 	def __init__(self, id, format, *args):
@@ -69,14 +97,6 @@ class BOM_pin_header(BOM_component):
 	def apply_settings(cls, settings : BOM_settings):
 		if v := settings.get_setting("JPH_MFN", ""):
 			cls.FORMAT = BOM_pin_header.__get_format(v)
-
-
-	@staticmethod
-	def __get_dims(dims:str) -> tuple[int, int]:
-		if m := BOM_pin_header.__RE_PULL_DIMS.match(dims):
-			return (int(m.group(1)), int(m.group(2)))
-		else:
-			return (0, 0)
 
 
 	@staticmethod
@@ -126,7 +146,7 @@ class BOM_pin_header(BOM_component):
 	@staticmethod
 	def __generate_Adam_Tech(my_shape:str, my_pitch:str, my_orient:str):
 		mfn = "Adam Tech"
-		nr, nc = BOM_pin_header.__get_dims(my_shape)
+		nr, nc = BOM_header._get_dims(my_shape)
 		
 		# TODO: pitch and orient?
 		
@@ -153,7 +173,7 @@ class BOM_pin_header(BOM_component):
 	@staticmethod
 	def __generate_Sullins(my_shape:str, my_pitch:str, my_orient:str):
 		mfn = "Sullins"
-		nr, nc = BOM_pin_header.__get_dims(my_shape)
+		nr, nc = BOM_header._get_dims(my_shape)
 
 		# TODO: pitch and orient?
 		
@@ -183,7 +203,7 @@ class BOM_pin_header(BOM_component):
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_socket_header(BOM_component):
+class BOM_socket_header(BOM_header):
 	"""Single/dual row socket header"""
 
 	class Format(Enum):
@@ -204,7 +224,6 @@ class BOM_socket_header(BOM_component):
 		# TODO: future will have different pitches and select series by pitch
 		cls.__RE_PART_ID_PATTERN = re.compile(r"^Connector:(?:Socket_)?Header_0?[12]x[0-9]{2}\[SocketHeader_.+_P2\.54mm_(?:Vertical|Horizontal)\]$")
 		cls.__RE_PACKAGE_PATTERN = re.compile(r"SocketHeader_(.+)_P(2\.54mm)_(Vertical|Horizontal)")
-		cls.__RE_PULL_DIMS = re.compile(r"^([12])x(0[1-9]|[1-3][0-9]|40)$")
 
 
 	def __init__(self, id, format, *args):
@@ -226,14 +245,6 @@ class BOM_socket_header(BOM_component):
 	def apply_settings(cls, settings : BOM_settings):
 		if v := settings.get_setting("JSH_MFN", ""):
 			cls.FORMAT = BOM_socket_header.__get_format(v)
-
-
-	@staticmethod
-	def __get_dims(dims:str) -> tuple[int, int]:
-		if m := BOM_socket_header.__RE_PULL_DIMS.match(dims):
-			return (int(m.group(1)), int(m.group(2)))
-		else:
-			return (0, 0)
 
 
 	@staticmethod
@@ -283,7 +294,7 @@ class BOM_socket_header(BOM_component):
 	@staticmethod
 	def __generate_Adam_Tech(my_shape:str, my_pitch:str, my_orient:str):
 		mfn = "Adam Tech"
-		nr, nc = BOM_socket_header.__get_dims(my_shape)
+		nr, nc = BOM_header._get_dims(my_shape)
 		
 		# TODO: pitch and orient?
 		
@@ -310,7 +321,7 @@ class BOM_socket_header(BOM_component):
 	@staticmethod
 	def __generate_Sullins(my_shape:str, my_pitch:str, my_orient:str):
 		mfn = "Sullins"
-		nr, nc = BOM_socket_header.__get_dims(my_shape)
+		nr, nc = BOM_header._get_dims(my_shape)
 		
 		# TODO: pitch and orient?
 		

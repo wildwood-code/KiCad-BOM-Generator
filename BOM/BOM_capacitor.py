@@ -8,7 +8,7 @@
 #    and tantalum capacitor)
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/13/2026
+#  Modified   : 04/14/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -23,11 +23,33 @@ from BOM.BOM_settings import BOM_settings
 
 
 # ------------------------------------------------------------------------------
+# class: BOM_capacitor (abstract parent class for capacitors)
+# ------------------------------------------------------------------------------
+
+class BOM_capacitor(BOM_component):
+	"""Parent class for all capacitors"""
+	
+	# BOM_capacitor does not define the abstract method apply_settings()
+	# and therefore remains abstract. The concrete class derived from
+	# BOM_capacitor shall define a method apply_settings()
+	
+	def __init__(self, pattern, id, format, *args):
+		super().__init__(pattern, id, format, *args)
+
+
+	@staticmethod
+	def _get_code_pF(value:numstr):
+		# all capacitors use 3-digit code, so pass tol="J" to get it as 3 digit
+		return value.code(tol="J", scale=1.0e12)   # 3 digit code in pF
+		
+		
+
+# ------------------------------------------------------------------------------
 # class: BOM_MLCC_capacitor
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_MLCC_capacitor(BOM_component):
+class BOM_MLCC_capacitor(BOM_capacitor):
 	"""Multi-layer ceramic capacitor"""
 
 	class Format(Enum):
@@ -115,12 +137,6 @@ class BOM_MLCC_capacitor(BOM_component):
 
 
 	@staticmethod
-	def __get_code_pF(value:numstr):
-		# all capacitors use 3-digit code, so pass tol="J" to get it as 3 digit
-		return value.code(tol="J", scale=1.0e12)   # 3 digit code in pF
-
-
-	@staticmethod
 	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, tcc:str|None, Vrating:numstr|None, format:"BOM_MLCC_capacitor.Format|str|None"):
 
 		# determine format
@@ -177,7 +193,7 @@ class BOM_MLCC_capacitor(BOM_component):
 			mpn = f"C{package}C"
 		else:
 			mpn = "C????C"
-		code = BOM_MLCC_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}"
 
 		match Vrating.value:
@@ -266,7 +282,7 @@ class BOM_MLCC_capacitor(BOM_component):
 				vcode = "??"
 		mpn += f"{vcode}"
 
-		code = BOM_MLCC_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}"
 
 		return (mfn, mpn)
@@ -312,7 +328,7 @@ class BOM_MLCC_capacitor(BOM_component):
 				vcode = "??"
 		mpn += vcode
 
-		code = BOM_MLCC_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}***"
 
 		return (mfn, mpn)
@@ -337,7 +353,7 @@ class BOM_MLCC_capacitor(BOM_component):
 				tcc_code = "???"
 		mpn += tcc_code
 				
-		code = BOM_MLCC_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}T"  # value, tolerance, packaging
 
 		match Vrating.value:
@@ -363,7 +379,7 @@ class BOM_MLCC_capacitor(BOM_component):
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_tantalum_capacitor(BOM_component):
+class BOM_tantalum_capacitor(BOM_capacitor):
 	"""Tantalum capacitor"""
 
 	class Format(Enum):
@@ -433,12 +449,6 @@ class BOM_tantalum_capacitor(BOM_component):
 
 
 	@staticmethod
-	def __get_code_pF(value:numstr):
-		# all capacitors use 3-digit code, so pass tol="J" to get it as 3 digit
-		return value.code(tol="J", scale=1.0e12)   # 3 digit code in pF
-
-
-	@staticmethod
 	def __generate_mfn_mpn(package:str|None, value:numstr|None, tol:str|None, Vrating:numstr|None, format:"BOM_tantalum_capacitor.Format|str|None"):
 
 		# determine format
@@ -491,7 +501,7 @@ class BOM_tantalum_capacitor(BOM_component):
 			mpn = f"T491{package_codes[package]}"
 		else:
 			mpn = "T491?"
-		code = BOM_tantalum_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}"
 
 		match Vrating.value:
@@ -533,7 +543,7 @@ class BOM_tantalum_capacitor(BOM_component):
 			mpn = f"TAJ{package_codes[package]}"
 		else:
 			mpn = "TAJ?"
-		code = BOM_tantalum_capacitor.__get_code_pF(value)
+		code = BOM_capacitor._get_code_pF(value)
 		mpn += f"{code}{tol}"
 
 		match Vrating.value:

@@ -10,7 +10,7 @@
 #    class BOM_RMF_resistor => metal-film SMT MELF resistors
 #
 #  Created    : 03/21/2025
-#  Modified   : 04/13/2026
+#  Modified   : 04/14/2026
 #  Author     : Kerry S. Martin, martin@wild-wood.net
 # ******************************************************************************
 
@@ -25,11 +25,26 @@ from BOM.BOM_settings import BOM_settings
 
 
 # ------------------------------------------------------------------------------
+# class: BOM_resistor
+# ------------------------------------------------------------------------------
+
+class BOM_resistor(BOM_component):
+	"""Parent class for all resistors"""
+
+	# BOM_resistor does not define the abstract method apply_settings()
+	# and therefore remains abstract. The concrete class derived from
+	# BOM_resistor shall define a method apply_settings()
+	
+	def __init__(self, pattern, id, format, *args):
+		super().__init__(pattern, id, format, *args)
+		
+
+# ------------------------------------------------------------------------------
 # class: BOM_SMT_resistor
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_SMT_resistor(BOM_component):
+class BOM_SMT_resistor(BOM_resistor):
 	"""Thick-film SMT resistors"""
 
 	class Format(Enum):
@@ -87,7 +102,7 @@ class BOM_SMT_resistor(BOM_component):
 			format = BOM_SMT_resistor.__get_format(self._format) if self._format else BOM_SMT_resistor.FORMAT
 
 			self.mfn, self.mpn, self.desc, self.package = BOM_SMT_resistor.__generate_mfn_mpn(self.package, self.value, self.tol, self.tcr, format)
-		
+	
 
 	@staticmethod
 	def __get_format(format:"BOM_SMT_resistor.Format|str|None") -> "BOM_SMT_resistor.Format":
@@ -250,7 +265,7 @@ class BOM_SMT_resistor(BOM_component):
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_THT_resistor(BOM_component):
+class BOM_THT_resistor(BOM_resistor):
 	"""Carbon film THT resistors"""
 
 	class Format(Enum):
@@ -403,7 +418,7 @@ class BOM_THT_resistor(BOM_component):
 # ------------------------------------------------------------------------------
 
 @static_init
-class BOM_RMF_resistor(BOM_component):
+class BOM_RMF_resistor(BOM_resistor):
 	"""Metal-film SMT MELF resistors"""
 
 	class Format(Enum):
